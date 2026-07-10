@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌱 1분 화분 물주기 챌린지</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background-color: #f0f7f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #2e6f40;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* 상태창 (타이머와 카운터) */
+        .status-board {
+            background: white;
+            padding: 12px 25px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #4a5568;
+            font-size: 1.1em;
+            display: flex;
+            gap: 20px;
+        }
+
+        #timer {
+            color: #e53e3e;
+        }
+
+        #total-counter {
+            color: #38a169;
+        }
+
+        /* 100개 화분 그리드 */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 15px;
+            width: 100%;
+            max-width: 1200px;
+            padding: 10px;
+        }
+
+        /* 화분 스타일 */
+        .pot-card {
+            background: #ffffff;
+            border-radius: 15px;
+            padding: 15px 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sprout {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            transition: transform 0.2s ease;
+        }
+
+        .pot-card:active .sprout {
+            transform: scale(1.2);
+        }
+
+        .water-count {
+            font-size: 0.85rem;
+            color: #718096;
+            margin-bottom: 10px;
+            background: #edf2f7;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .water-btn {
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: background 0.2s;
+            width: 80%;
+        }
+
+        .water-btn:hover {
+            background-color: #3182ce;
+        }
+
+        /* 물주기 완료 스타일 */
+        .pot-card.completed {
+            background: #e6fffa;
+            border-color: #38a169;
+        }
+
+        .pot-card.completed .water-count {
+            background: #c6f6d5;
+            color: #22543d;
+            font-weight: bold;
+        }
+
+        .pot-card.completed .water-btn {
+            background-color: #cbd5e0;
+            color: #718096;
+            cursor: not-allowed;
+        }
+
+        /* 🚨 정지 화면 (타임아웃 오버레이) */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85); /* 화면 어둡게 */
+            backdrop-filter: blur(5px); /* 배경 흐리게 */
+            display: none; /* 기본은 숨김 */
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .result-box {
+            background: white;
+            padding: 40px;
+            border-radius: 25px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 80%;
+            animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popUp {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .result-box h2 {
+            color: #2d3748;
+            margin-top: 0;
+            font-size: 2rem;
+        }
+
+        .result-count {
+            font-size: 3.5rem;
+            font-weight: bold;
+            color: #38a169;
+            margin: 20px 0;
+        }
+
+        .restart-btn {
+            background-color: #38a169;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .restart-btn:hover {
+            background-color: #2f855a;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🌱 1분 화분 물주기 챌린지 ✨</h1>
+    
+    <div class="status-board">
+        <div>⏱️ 남은 시간: <span id="timer">60</span>초</div>
+        <div>완료된 화분: <span id="total-counter">0</span> / 100 개</div>
+    </div>
+
+    <div class="grid-container" id="flowerpot-grid"></div>
+
+    <div class="overlay" id="end-overlay">
+        <div class="result-box">
+            <h2 id="result-title">⏱️ 시간 종료!</h2>
+            <p style="color: #4a5568; font-size: 1.1rem;">파릇파릇하게 키워낸 화분</p>
+            <div class="result-count"><span id="final-score">0</span>개</div>
+            <button class="restart-btn" onclick="location.reload()">다시 도전하기</button>
+        </div>
+    </div>
+
+    <script>
+        const grid = document.getElementById('flowerpot-grid');
+        const totalCounter = document.getElementById('total-counter');
+        const timerDisplay = document.getElementById('timer');
+        const endOverlay = document.getElementById('end-overlay');
+        const finalScore = document.getElementById('final-score');
+        const resultTitle = document.getElementById('result-title');
+        
+        const growthStages = {
+            0: '🟫', 1: '🌱', 2: '🌿', 3: '🪴', 4: '🌳', 5: '🌸✨'
+        };
+
+        let completedPotsCount = 0;
+        let timeLeft = 60; // 1분 (60초)
+        let gameActive = true;
+
+        // --- 1분 타이머 작동 ---
+        const countdown = setInterval(() => {
+            if (!gameActive) return;
+            
+            timeLeft--;
+            timerDisplay.innerText = timeLeft;
+
+            // 시간이 다 되었을 때
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                endGame(false); // 타임오버 종료
+            }
+        }, 1000);
+
+        // --- 게임 종료 함수 ---
+        function endGame(isWin) {
+            gameActive = false;
+            
+            // 모든 버튼 비활성화 (정지 상태)
+            const allButtons = document.querySelectorAll('.water-btn');
+            allButtons.forEach(btn => btn.disabled = true);
+
+            // 결과창에 개수 입력 및 보여주기
+            finalScore.innerText = completedPotsCount;
+            
+            if (isWin) {
+                resultTitle.innerText = "🎉 미션 성공!";
+                resultTitle.style.color = "#38a169";
+            } else {
+                resultTitle.innerText = "⏱️ 시간 종료!";
+                resultTitle.style.color = "#e53e3e";
+            }
+
+            endOverlay.style.display = 'flex'; // 정지 화면 표시
+        }
+
+        // --- 100개 화분 생성 ---
+        for (let i = 1; i <= 100; i++) {
+            let waterCount = 0;
+
+            const potCard = document.createElement('div');
+            potCard.className = 'pot-card';
+
+            const sprout = document.createElement('div');
+            sprout.className = 'sprout';
+            sprout.innerText = growthStages[0];
+
+            const countBadge = document.createElement('div');
+            countBadge.className = 'water-count';
+            countBadge.innerText = `물 준 횟수: 0/5`;
+
+            const button = document.createElement('button');
+            button.className = 'water-btn';
+            button.innerText = '💧 물주기';
+
+            button.addEventListener('click', () => {
+                if (!gameActive) return; // 게임이 끝났으면 클릭 무시
+
+                if (waterCount < 5) {
+                    waterCount++;
+                    sprout.innerText = growthStages[waterCount];
+                    countBadge.innerText = `물 준 횟수: ${waterCount}/5`;
+
+                    if (waterCount === 5) {
+                        potCard.classList.add('completed');
+                        button.innerText = '🌿 완료!';
+                        button.disabled = true;
+                        
+                        completedPotsCount++;
+                        totalCounter.innerText = completedPotsCount;
+
+                        // 1분의 시간 안에 100개를 모두 완료했을 때
+                        if (completedPotsCount === 100) {
+                            clearInterval(countdown);
+                            setTimeout(() => endGame(true), 300);
+                        }
+                    }
+                }
+            });
+
+            potCard.appendChild(sprout);
+            potCard.appendChild(countBadge);
+            potCard.appendChild(button);
+            grid.appendChild(potCard);
+        }
+    </script>
+</body>
+</html>
